@@ -1,0 +1,109 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-float infinite 3s ease-in-out;
+  }
+}
+
+.App-header {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+}
+
+.App-link {
+  color: rgb(112, 76, 182);
+}
+
+@keyframes App-logo-float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.paper-block {
+  display: inline-block;
+  padding: 2px 4px;
+  margin: 0 2px;
+  background-color: #eef;
+}
+
+.container {
+  display: flex;
+  align-items: flex-start;
+}
+
+.left-side {
+  flex: 1;
+}
+
+.right-side {
+  flex: 1;
+  text-align: left;
+  padding: 20px;
+  position: relative; /* For positioning the popup absolutely */
+}
+
+.editor {
+  padding: 8px;
+  border: none;
+  min-height: auto;
+  outline: none;
+  font-family: sans-serif;
+}
+
+.inline-item {
+  display: inline-block;
+  background-color: #eef;
+  padding: 0 4px;
+  margin: 0 2px;
+  border-radius: 3px;
+}
+
+.popup-list {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.popup-item {
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.popup-item.selected {
+  background: #ddd;
+}
+
+.text-editor-block {
+  text-align: left;
+  position: relative;
+}
+
+.section-title {
+  text-align: left;
+}
