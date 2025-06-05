@@ -11,11 +11,12 @@ export type TextEditorBlockProps = {
   onChange: (newHtml: string) => void;     // 블록 내부가 바뀌면 호출
   onSplit: (beforeHtml: string, afterHtml: string) => void; // Enter(중간) → 블록 분할
   onEnterAtEnd: () => void;                // Enter(끝) → 새 블록 요청
+  onBackspaceAtEmpty: () => void;
   shouldFocus: boolean;                    // 부모가 “이 블록에 포커스해줘!” 요청
 };
 
 const TextEditorBlock = (props: TextEditorBlockProps) => {
-  const { value, onChange, onSplit, onEnterAtEnd, shouldFocus } = props;
+  const { value, onChange, onSplit, onEnterAtEnd, onBackspaceAtEmpty, shouldFocus } = props;
 
   // contentEditable 영역
   const editorRef = useRef<HTMLDivElement>(null);
@@ -264,8 +265,35 @@ const TextEditorBlock = (props: TextEditorBlockProps) => {
         e.preventDefault();
         handleSlash();
       }
+      else if (e.key === "Backspace") {
+        const el = editorRef.current;
+        const sel = window.getSelection();
+        if (!el || !sel || sel.rangeCount === 0) {
+          return;
+        }
+        // 블록 전체의 텍스트(plain text) 길이가 0인지 확인
+        const plainText = el.innerText.replace(/\u200B/g, ""); // zero-width space 제거 후 체크
+        // 커서가 맨 앞인지 확인
+        const range = sel.getRangeAt(0);
+        const atStart = (() => {
+          // 선택된 범위의 시작이 contentEditable 내부 맨 앞인지
+          // a) startContainer가 el 내부의 첫 텍스트 노드(또는 토큰)이고,
+          // b) startOffset이 0
+          if (range.startOffset !== 0) return false;
+          const node = range.startContainer;
+          // 만약 span.inline-item 내부라면, 그 앞의 노드가 없거나 텍스트 길이가 0이어야 맨 앞이다.
+          // 간단히, container가 el 그 자체일 때 offset=0으로 체크해도 충분.
+          return node === el || el.contains(node);
+        })();
+
+        if (plainText.trim().length === 0 && atStart) {
+          e.preventDefault();
+          onBackspaceAtEmpty();
+          return;
+        }
+      }
     },
-    [popupOpen, selectedIndex, selectItem, onEnterAtEnd, onSplit, handleSlash]
+    [popupOpen, selectItem, selectedIndex, onEnterAtEnd, onSplit, handleSlash, onBackspaceAtEmpty]
   );
 
   return (

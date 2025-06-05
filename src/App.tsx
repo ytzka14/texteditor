@@ -174,6 +174,79 @@ export const App = () => {
     setFullContent((prev) => updateHtml(prev));
   };
 
+    const handleRemoveBlock = (sectionId: string, blockId: string) => {
+    // 1) 해당 블록을 섹션에서 제거하고, 동시에 삭제 대상 블록의 인덱스와
+    //    섹션 내 나머지 블록 ID 리스트를 구해서 포커스할 대상을 결정한다.
+    const removeBlockAndGetNewFocus = (
+      sections: Section[]
+    ): { updatedSections: Section[]; nextFocus: { sectionId: string; blockId: string } | null } => {
+      let nextFocus: { sectionId: string; blockId: string } | null = null;
+
+      const recurse = (secs: Section[]): Section[] => {
+        return secs.map((sec) => {
+          if (sec.id === sectionId) {
+            // 해당 섹션의 content 배열에서 blockId를 삭제
+            const idx = sec.content.findIndex((b) => b.id === blockId);
+            if (idx === -1) {
+              return sec;
+            }
+
+            // 포커스 대상 결정: 이전 블록이 있으면 그쪽, 없고 뒤에 블록이 있으면 그쪽, 모두 없으면 null
+            if (sec.content.length > 1) {
+              if (idx > 0) {
+                // 이전 블록에 포커스
+                nextFocus = { sectionId, blockId: sec.content[idx - 1].id };
+              } else {
+                // idx === 0이고 뒤에 블록이 있다면 뒤쪽 블록에 포커스
+                nextFocus = { sectionId, blockId: sec.content[idx + 1].id };
+              }
+            } else {
+              // content가 하나뿐이었고 삭제하면 빈 content → 포커스 없음
+              nextFocus = null;
+            }
+
+            // 실제 제거
+            const updatedContent: Block[] = [
+              ...sec.content.slice(0, idx),
+              ...sec.content.slice(idx + 1),
+            ];
+            return {
+              ...sec,
+              content: updatedContent,
+            };
+          }
+
+          // 아니라면 하위 섹션으로 재귀
+          // 아니면 하위 섹션으로 재귀
+          const { updatedSections: newSubsections, nextFocus: childFocus } = removeBlockAndGetNewFocus(sec.subsections);
+
+          // 만약 하위 섹션에서 nextFocus가 결정되었다면, 위에서 덮어쓴 nextFocus를 그대로 사용
+          if (childFocus && !nextFocus) {
+            nextFocus = childFocus;
+          }
+
+          return {
+            ...sec,
+            subsections: newSubsections,
+          };
+        });
+      };
+
+      const updated = recurse(sections);
+      return { updatedSections: updated, nextFocus };
+    };
+
+    const { updatedSections, nextFocus } = removeBlockAndGetNewFocus(fullContent);
+    setFullContent(updatedSections);
+
+    // 포커스 블록 설정
+    if (nextFocus) {
+      setFocusBlock(nextFocus);
+    } else {
+      setFocusBlock(null);
+    }
+  };
+
   /**
    * 재귀적으로 섹션과 하위 섹션을 렌더
    */
@@ -204,6 +277,9 @@ export const App = () => {
             onEnterAtEnd={() =>
               {handleAddEmptyBlock(section.id, blk.id)}
             }
+            onBackspaceAtEmpty={() => {
+              handleRemoveBlock(section.id, blk.id);
+            }}
             shouldFocus={
               focusBlock?.sectionId === section.id &&
               focusBlock.blockId === blk.id
